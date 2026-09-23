@@ -1,0 +1,199 @@
+{
+  "kpis": {
+    "cajas_totales": 25597,
+    "proyeccion_10": 28157,
+    "pallets_mes": 116,
+    "camiones_mes": 5
+  },
+  "semanal": {
+    "labels": [
+      "Sem 1 (1-7)",
+      "Sem 2 (8-14)",
+      "Sem 3 (15-21)",
+      "Sem 4 (22-28)",
+      "Sem 5 (29-31)*"
+    ],
+    "impulsivo": [
+      3775,
+      4021,
+      4152,
+      4297,
+      2373
+    ],
+    "familiar": [
+      1184,
+      1150,
+      1227,
+      1392,
+      797
+    ],
+    "granel": [
+      241,
+      344,
+      260,
+      212,
+      172
+    ]
+  },
+  "escenarios": {
+    "labels": [
+      "Impulsivos",
+      "Familiares",
+      "Granel"
+    ],
+    "real": [
+      18618,
+      5750,
+      1229
+    ],
+    "p5": [
+      19549,
+      6038,
+      1290
+    ],
+    "p10": [
+      20480,
+      6325,
+      1352
+    ],
+    "p20": [
+      22342,
+      6900,
+      1475
+    ]
+  },
+  "top_pallets": [
+    {
+      "sku": "12018554",
+      "name": "SAVORY Helado Cassata Brick 6x1L N1 CL",
+      "cat": "fam",
+      "familia_label": "FAMILIAR",
+      "cjs": 1381,
+      "factor_pallet": 135,
+      "pallets": 11
+    },
+    {
+      "sku": "12263770",
+      "name": "KRIKO FRUTILLA 20X60 ML C",
+      "cat": "imp",
+      "familia_label": "IMPULSIVO",
+      "cjs": 1147,
+      "factor_pallet": 325,
+      "pallets": 4
+    },
+    {
+      "sku": "12611300",
+      "name": "SAVORY CENTELLA GALACTEA HEL 26X37,6G CL",
+      "cat": "imp",
+      "familia_label": "IMPULSIVO",
+      "cjs": 1116,
+      "factor_pallet": 325,
+      "pallets": 4
+    },
+    {
+      "sku": "12319674",
+      "name": "MEGA Helado Frambuesa 16x90ml",
+      "cat": "imp",
+      "familia_label": "IMPULSIVO",
+      "cjs": 1060,
+      "factor_pallet": 325,
+      "pallets": 4
+    },
+    {
+      "sku": "12579266",
+      "name": "SAVORY CENTELLA Hel Mz Lm 26x52g CL",
+      "cat": "imp",
+      "familia_label": "IMPULSIVO",
+      "cjs": 1037,
+      "factor_pallet": 325,
+      "pallets": 4
+    },
+    {
+      "sku": "12076018",
+      "name": "CHOCOLITO Helado 20x85ml N1 CL",
+      "cat": "imp",
+      "familia_label": "IMPULSIVO",
+      "cjs": 910,
+      "factor_pallet": 325,
+      "pallets": 3
+    },
+    {
+      "sku": "12317902",
+      "name": "CRAZY Helado Frambuesa  12x170 ml CL",
+      "cat": "imp",
+      "familia_label": "IMPULSIVO",
+      "cjs": 894,
+      "factor_pallet": 198,
+      "pallets": 5
+    },
+    {
+      "sku": "12370209",
+      "name": "COLA DE TIGRE LECHE 26 X 70 ML,    ",
+      "cat": "imp",
+      "familia_label": "IMPULSIVO",
+      "cjs": 848,
+      "factor_pallet": 325,
+      "pallets": 3
+    },
+    {
+      "sku": "12317444",
+      "name": "CRAZY Helado Flocos 12x170ml CL",
+      "cat": "imp",
+      "familia_label": "IMPULSIVO",
+      "cjs": 787,
+      "factor_pallet": 198,
+      "pallets": 4
+    },
+    {
+      "sku": "12035120",
+      "name": "CROCANTY Helado 20x90ml CL",
+      "cat": "imp",
+      "familia_label": "IMPULSIVO",
+      "cjs": 744,
+      "factor_pallet": 325,
+      "pallets": 3
+    }
+  ],
+  "zonas": [
+    {
+      "comuna": "Iquique",
+      "cjs": 14013,
+      "pct": 69.9,
+      "pallets": 55,
+      "camiones": "2 Camiones dedicados",
+      "tipo": "Urbano Costero"
+    },
+    {
+      "comuna": "Alto Hospicio",
+      "cjs": 7016,
+      "pct": 26.0,
+      "pallets": 20,
+      "camiones": "1 Camión compartido",
+      "tipo": "Meseta Urbana"
+    },
+    {
+      "comuna": "Pozo Almonte",
+      "cjs": 2786,
+      "pct": 2.4,
+      "pallets": 2,
+      "camiones": "Ruta Pampa",
+      "tipo": "Centro Tamarugal"
+    },
+    {
+      "comuna": "Pica",
+      "cjs": 1095,
+      "pct": 1.0,
+      "pallets": 1,
+      "camiones": "Ruta Oasis",
+      "tipo": "Turismo / Interior"
+    },
+    {
+      "comuna": "Huara / Camiña",
+      "cjs": 424,
+      "pct": 0.7,
+      "pallets": 1,
+      "camiones": "Ruta Quebradas",
+      "tipo": "Altiplano Interior"
+    }
+  ]
+}

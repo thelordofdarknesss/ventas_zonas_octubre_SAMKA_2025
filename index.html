@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAMKA Logistics & Demand Intelligence</title>
+  
+  <!-- Tipografía Corporativa -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- Fondos ambientales dinámicos -->
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+  <div class="glow-orb orb-3"></div>
+
+  <main class="dashboard-wrapper">
+    <!-- 1. HEADER CORPORATIVO -->
+    <header class="top-header">
+      <div class="header-titles">
+        <div class="tag-pill">
+          <span class="pulse-dot"></span>
+          CENTRO LOGÍSTICO SAMKA • ZONA NORTE (TARAPACÁ)
+        </div>
+        <h1>Planificación de Demanda, Despacho & Ruteo 2026</h1>
+        <p class="subtitle">Análisis histórico real Octubre 2025, proyecciones multi-escenario y simulación de carga para camiones rampla de 28 pallets.</p>
+      </div>
+      <div class="header-meta">
+        <div class="meta-box">
+          <span class="meta-label">Operador Distribución</span>
+          <span class="meta-val">Savory Ice Cream Co.</span>
+        </div>
+        <div class="meta-box">
+          <span class="meta-label">Factor de Cubicaje</span>
+          <span class="meta-val">Maestro Oficial x SKU</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 2. KPIS INTERACTIVOS -->
+    <section class="kpi-container">
+      <div class="kpi-card" data-tilt>
+        <div class="kpi-icon icon-blue">📦</div>
+        <div class="kpi-content">
+          <span class="kpi-title">Volumen Real Oct 2025</span>
+          <div class="kpi-number-wrap">
+            <span class="counter" id="kpi-cajas" data-target="25597">0</span>
+            <span class="kpi-unit">CJS</span>
+          </div>
+          <span class="kpi-foot">24.225 transacciones limpias</span>
+        </div>
+      </div>
+
+      <div class="kpi-card target-card" data-tilt>
+        <div class="kpi-icon icon-green">📈</div>
+        <div class="kpi-content">
+          <span class="kpi-title">Proyección 2026 (+10%)</span>
+          <div class="kpi-number-wrap">
+            <span class="counter" id="kpi-proy" data-target="28157">0</span>
+            <span class="kpi-unit">CJS</span>
+          </div>
+          <span class="kpi-foot positive-badge">+2.560 cajas netas de meta</span>
+        </div>
+      </div>
+
+      <div class="kpi-card" data-tilt>
+        <div class="kpi-icon icon-orange">🏗️</div>
+        <div class="kpi-content">
+          <span class="kpi-title">Demanda en Pallets</span>
+          <div class="kpi-number-wrap">
+            <span class="counter" id="kpi-pallets" data-target="102">0</span>
+            <span class="kpi-unit">PLTS</span>
+          </div>
+          <span class="kpi-foot">Cálculo exacto por material</span>
+        </div>
+      </div>
+
+      <div class="kpi-card" data-tilt>
+        <div class="kpi-icon icon-purple">🚛</div>
+        <div class="kpi-content">
+          <span class="kpi-title">Flota Ramplas Estimada</span>
+          <div class="kpi-number-wrap">
+            <span class="counter" id="kpi-camiones" data-target="4">0</span>
+            <span class="kpi-unit">CAMIONES</span>
+          </div>
+          <span class="kpi-foot">Capacidad 28 pallets cerrados</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. SECCIÓN BAHÍA DE CARGA FÍSICA (CAMIÓN RAMPLA 28 PALLETS) -->
+    <section class="panel-section truck-panel">
+      <div class="panel-head">
+        <div>
+          <h2>Simulador de Despacho: Rampla Frigorífica (28 Pallets Enteros)</h2>
+          <p class="panel-sub">Pasa el cursor por cualquier pallet para inspeccionar el SKU asignado, estiba oficial y volumen.</p>
+        </div>
+        <div class="truck-capacity-badge">
+          <span class="dot-live"></span> Carga Optimizada por Cubicaje
+        </div>
+      </div>
+
+      <!-- Esquema físico del camión -->
+      <div class="truck-assembly">
+        <div class="truck-cabin">
+          <span>CABINA</span>
+        </div>
+        <div class="truck-trailer">
+          <div class="trailer-grid" id="truckGrid"></div>
+        </div>
+      </div>
+
+      <!-- Barra de inspección activa -->
+      <div class="inspector-strip" id="inspectorBar">
+        <div class="insp-item"><span class="insp-lbl">Pallet Seleccionado:</span> <strong id="inspSlot">P-01</strong></div>
+        <div class="insp-item"><span class="insp-lbl">Producto:</span> <strong id="inspName">Cassata Brick 1L</strong></div>
+        <div class="insp-item"><span class="insp-lbl">Familia:</span> <span class="insp-pill" id="inspCat">Familiar</span></div>
+        <div class="insp-item"><span class="insp-lbl">Estiba Oficial:</span> <strong id="inspFactor" class="factor-val">135 CJS/Pallet</strong></div>
+        <div class="insp-item"><span class="insp-lbl">Venta Real Mes:</span> <strong id="inspCjs">1.381 CJS</strong></div>
+      </div>
+
+      <div class="truck-legend">
+        <div class="legend-item"><span class="color-chip chip-imp"></span> Helados Impulsivos (325 CJS/Pallet)</div>
+        <div class="legend-item"><span class="color-chip chip-fam"></span> Helados Familiares (135 CJS/Pallet)</div>
+        <div class="legend-item"><span class="color-chip chip-granel"></span> Baldes Granel (96 CJS/Pallet)</div>
+      </div>
+    </section>
+
+    <!-- 4. SECCIÓN DISTRIBUCIÓN TERRITORIAL & RUTEO DE FLOTA -->
+    <section class="panel-section">
+      <div class="panel-head">
+        <div>
+          <h2>Distribución Territorial & Plan de Ruteo (Región de Tarapacá)</h2>
+          <p class="panel-sub">Justificación de despacho: hacia dónde se mueven los pallets y asignación operativa de camiones.</p>
+        </div>
+        <div class="tag-pill">Eje Iquique - Hospicio (95,9% Demanda)</div>
+      </div>
+
+      <div class="geo-routing-grid">
+        <!-- Tarjetas interactivas de Flota y Rutas -->
+        <div class="fleet-cards">
+          <div class="fleet-card active-route" data-dest="iquique">
+            <div class="fleet-header">
+              <span class="truck-icon-anim">🚛💨</span>
+              <div>
+                <h4>Camión #1: Troncal Iquique Centro & Costanera</h4>
+                <span class="route-tag">28 Pallets (Mix Alta Densidad)</span>
+              </div>
+            </div>
+            <p class="fleet-desc">Abastece el núcleo de alta rotación costera y almacenes principales (Kriko, Centella, Mega).</p>
+            <div class="fleet-progress"><div class="progress-bar" style="width: 100%;"></div></div>
+          </div>
+
+          <div class="fleet-card" data-dest="hospicio">
+            <div class="fleet-header">
+              <span class="truck-icon-anim">🚛💨</span>
+              <div>
+                <h4>Camión #2: Conurbación Hospicio + Iquique Sur</h4>
+                <span class="route-tag">28 Pallets (Mix Cassatas y Vasos)</span>
+              </div>
+            </div>
+            <p class="fleet-desc">20 Pallets directos para Alto Hospicio + 8 Pallets de soporte para el sector sur de Iquique.</p>
+            <div class="fleet-progress"><div class="progress-bar" style="width: 100%;"></div></div>
+          </div>
+
+          <div class="fleet-card" data-dest="interior">
+            <div class="fleet-header">
+              <span class="truck-icon-anim">🚛💨</span>
+              <div>
+                <h4>Camión #3: Stock Iquique + Ruta Tamarugal</h4>
+                <span class="route-tag">28 Pallets (Carga Mixta + Baldes)</span>
+              </div>
+            </div>
+            <p class="fleet-desc">Consolidación bodega Iquique + pallets mixtos hacia Pozo Almonte, Pica y Huara.</p>
+            <div class="fleet-progress"><div class="progress-bar" style="width: 100%;"></div></div>
+          </div>
+        </div>
+
+        <!-- Gráfico de Donut: Participación por Comuna -->
+        <div class="chart-box">
+          <canvas id="chartZonas"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. ANÁLISIS TEMPORAL & COMPARATIVO (GRÁFICOS DUALES) -->
+    <section class="charts-row">
+      <div class="panel-section chart-card">
+        <div class="panel-head">
+          <h3>Evolución Semanal de Demanda (Octubre 2025)</h3>
+        </div>
+        <div class="chart-box">
+          <canvas id="chartSemanas"></canvas>
+        </div>
+      </div>
+
+      <div class="panel-section chart-card">
+        <div class="panel-head">
+          <h3>Comparativa de Escenarios 2026</h3>
+          <div class="switch-group">
+            <button class="btn-toggle active" id="btnAllEscenarios">Todos</button>
+            <button class="btn-toggle" id="btnFocus10">+10% Target</button>
+          </div>
+        </div>
+        <div class="chart-box">
+          <canvas id="chartEscenarios"></canvas>
+        </div>
+      </div>
+    </section>
+
+  <!-- 6. MIX TOP 10 PALLETS & COMPARATIVA OPERATIVA -->
+    <section class="panel-section full-chart">
+      <div class="panel-head">
+        <div>
+          <h3>Top 10 Productos: Mix de Pallets Reales & Análisis Comparativo</h3>
+          <p class="panel-sub" id="subtituloPallets">Visualiza el ranking de pallets o compara la participación mensual vs. el ritmo semanal.</p>
+        </div>
+        <div class="switch-group">
+          <button class="btn-toggle active" id="btnVistaBarras">📊 Ranking Pallets</button>
+          <button class="btn-toggle" id="btnVistaCircular">🍩 Comparar Mix (Mes vs Sem)</button>
+        </div>
+      </div>
+
+      <!-- Contenedor 1: Barras estándar -->
+      <div class="chart-box tall-box" id="boxBarras">
+        <canvas id="chartPalletsTop"></canvas>
+      </div>
+
+      <!-- Contenedor 2: Vista Circular Comparativa Doble (Mes vs Semana) -->
+      <div class="circular-compare-grid" id="boxCirculares" style="display: none;">
+        <div class="circle-card">
+          <h4>📦 Mix Mensual Consolidado (102 Pallets Totales)</h4>
+          <p>Ocupación acumulada en bodega central durante octubre</p>
+          <div class="chart-box-circle">
+            <canvas id="chartPieMes"></canvas>
+          </div>
+        </div>
+        <div class="circle-card">
+          <h4>🚚 Despacho Semanal Promedio (~23 Pallets / Viaje)</h4>
+          <p>Carga requerida por cada rampla semanal de 28 slots</p>
+          <div class="chart-box-circle">
+            <canvas id="chartPieSemana"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- 7. MODAL FICHA TÉCNICA DE PRODUCTO -->
+    <div id="productModal" class="modal-backdrop">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div>
+            <span class="tag-pill" id="modalSkuPill">SKU: 12018322</span>
+            <h3 id="modalProdTitle">SAVORY Helado Cassata Brick 6x1L</h3>
+          </div>
+          <button class="modal-close" id="modalCloseBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="spec-grid">
+            <div class="spec-item">
+              <span class="spec-label">Categoría Logística</span>
+              <strong id="modalCat">Familiar</strong>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Factor de Pallet</span>
+              <strong id="modalFactor" class="factor-val">135 Cajas/Pallet</strong>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Demanda Octubre</span>
+              <strong id="modalCjs">1.381 CJS</strong>
+            </div>
+            <div class="spec-item highlight">
+              <span class="spec-label">Pallets Reales de Carga</span>
+              <strong id="modalPallets">11 Pallets</strong>
+            </div>
+          </div>
+          <div class="modal-note" id="modalImpactNote">
+            Este producto requiere <strong>11 pallets de rampla</strong> debido a su formato de 135 cajas por pallet.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. FOOTER CORPORATIVO -->
+    <footer class="top-header" style="padding: 18px 30px; font-size: 0.84rem; color: var(--text-muted);">
+      <div>© 2026 Distribuidora Samka - División Logística y Cadena de Suministro Savory.</div>
+      <div style="display: flex; align-items: center; gap: 8px; color: #10B981; font-weight: 700;">
+        <span class="pulse-dot"></span> Motor de Planificación Operativo
+      </div>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
