@@ -282,10 +282,11 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // Gráfico 3 & 4 (Top 10): Barras Horizontales y Gráficos Circulares Comparativos
+    // Gráfico 3 & 4 (Top 10): Barras Horizontales
     const ctxTop = document.getElementById("chartPalletsTop");
     const ctxPieMes = document.getElementById("chartPieMes");
     const ctxPieSem = document.getElementById("chartPieSemana");
+    const ctxPieDia = document.getElementById("chartPieDia");
 
     const boxBarras = document.getElementById("boxBarras");
     const boxCirculares = document.getElementById("boxCirculares");
@@ -301,6 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let chartTopInstance = null;
     let chartPieMesInstance = null;
     let chartPieSemInstance = null;
+    let chartPieDiaInstance = null;
 
     if (ctxTop) {
       chartTopInstance = new Chart(ctxTop, {
@@ -341,22 +343,21 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // Inicialización de Gráficos Circulares Ordenados y con Texto Blanco Legible
+    // Inicialización de Gráficos Circulares Triples (Mes, Semana y Día de Picking)
     function inicializarGraficosCirculares() {
-      if (chartPieMesInstance && chartPieSemInstance) return;
+      if (chartPieMesInstance && chartPieSemInstance && chartPieDiaInstance) return;
 
-      // 1. DATA MES: Ordenada de Mayor a Menor por Pallets del Mes
+      // 1. DATA MES: Ordenada de mayor a menor por pallets totales
       const itemsMesOrdenados = [...dataStore.topPallets].sort((a, b) => b.pallets - a.pallets);
 
-      // 2. DATA SEMANA: Ordenada de Mayor a Menor por Pallets Semanales
-      const itemsSemOrdenados = [...dataStore.topPallets].sort((a, b) => {
-        const palSemB = b.pallets / 4.43;
-        const palSemA = a.pallets / 4.43;
-        return palSemB - palSemA;
-      });
+      // 2. DATA SEMANA: Ordenada por volumen semanal
+      const itemsSemOrdenados = [...dataStore.topPallets].sort((a, b) => (b.pallets / 4.43) - (a.pallets / 4.43));
 
-      // 1. DONUT MES
-      if (ctxPieMes) {
+      // 3. DATA DÍA: Base 22 días hábiles (ordenada por cajas diarias a preparar)
+      const itemsDiaOrdenados = [...dataStore.topPallets].sort((a, b) => (b.cjs / 22) - (a.cjs / 22));
+
+      // DONUT 1: MES
+      if (ctxPieMes && !chartPieMesInstance) {
         chartPieMesInstance = new Chart(ctxPieMes, {
           type: "doughnut",
           data: {
@@ -376,16 +377,12 @@ document.addEventListener("DOMContentLoaded", () => {
               legend: {
                 position: "right",
                 labels: {
-                  color: "#F8FAFC", // TEXTO BLANCO BRILLANTE DE ALTA VISIBILIDAD
-                  boxWidth: 12,
-                  boxHeight: 12,
+                  color: "#F8FAFC",
+                  boxWidth: 10,
+                  boxHeight: 10,
                   usePointStyle: true,
-                  padding: 12,
-                  font: {
-                    size: 11,
-                    weight: "600",
-                    family: "'Plus Jakarta Sans', sans-serif"
-                  }
+                  padding: 10,
+                  font: { size: 10.5, weight: "600" }
                 }
               },
               tooltip: {
@@ -406,8 +403,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
 
-      // 2. DONUT SEMANA
-      if (ctxPieSem) {
+      // DONUT 2: SEMANA
+      if (ctxPieSem && !chartPieSemInstance) {
         chartPieSemInstance = new Chart(ctxPieSem, {
           type: "doughnut",
           data: {
@@ -430,22 +427,18 @@ document.addEventListener("DOMContentLoaded", () => {
               legend: {
                 position: "right",
                 labels: {
-                  color: "#F8FAFC", // TEXTO BLANCO BRILLANTE DE ALTA VISIBILIDAD
-                  boxWidth: 12,
-                  boxHeight: 12,
+                  color: "#F8FAFC",
+                  boxWidth: 10,
+                  boxHeight: 10,
                   usePointStyle: true,
-                  padding: 12,
-                  font: {
-                    size: 11,
-                    weight: "600",
-                    family: "'Plus Jakarta Sans', sans-serif"
-                  }
+                  padding: 10,
+                  font: { size: 10.5, weight: "600" }
                 }
               },
               tooltip: {
                 callbacks: {
                   title: (items) => itemsSemOrdenados[items[0].dataIndex].name,
-                  label: (ctx) => ` Demanda Semanal: ${ctx.raw} Pallets (Clic para ver ficha)`
+                  label: (ctx) => ` Despacho Semanal: ${ctx.raw} Pallets (Clic para ver ficha)`
                 }
               }
             },
@@ -454,6 +447,56 @@ document.addEventListener("DOMContentLoaded", () => {
               if (elements && elements.length > 0) {
                 const idx = elements[0].index;
                 abrirModalProducto(itemsSemOrdenados[idx], "semana");
+              }
+            }
+          }
+        });
+      }
+
+      // DONUT 3: DÍA HÁBIL (PICKING DIARIO URBANO)
+      if (ctxPieDia && !chartPieDiaInstance) {
+        chartPieDiaInstance = new Chart(ctxPieDia, {
+          type: "doughnut",
+          data: {
+            labels: itemsDiaOrdenados.map(p => {
+              const cjsDia = Math.round(p.cjs / 22);
+              return `${formatearNombreComercial(p.name)}: ${cjsDia} cjs/día`;
+            }),
+            datasets: [{
+              data: itemsDiaOrdenados.map(p => Math.round(p.cjs / 22)),
+              backgroundColor: coloresTop10,
+              borderWidth: 2,
+              borderColor: "#0A0F1D",
+              hoverOffset: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "right",
+                labels: {
+                  color: "#F8FAFC",
+                  boxWidth: 10,
+                  boxHeight: 10,
+                  usePointStyle: true,
+                  padding: 10,
+                  font: { size: 10.5, weight: "600" }
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  title: (items) => itemsDiaOrdenados[items[0].dataIndex].name,
+                  label: (ctx) => ` Picking Diario: ${ctx.raw} Cajas/Día (Clic para ver ficha)`
+                }
+              }
+            },
+            cutout: "60%",
+            onClick: (evt, elements) => {
+              if (elements && elements.length > 0) {
+                const idx = elements[0].index;
+                abrirModalProducto(itemsDiaOrdenados[idx], "dia");
               }
             }
           }
@@ -475,7 +518,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btnBarras.classList.remove("active");
         if (boxBarras) boxBarras.style.display = "none";
         if (boxCirculares) boxCirculares.style.display = "grid";
-        if (subPallets) subPallets.textContent = "Comparativa de ocupación: Volumen total acumulado (Mes) vs. Cupo de carga semanal.";
+        if (subPallets) subPallets.textContent = "Ciclo logístico: Ocupación acumulada en bodega (Mes), Rampla (Semana) y Picking urbano (Día).";
         inicializarGraficosCirculares();
       });
     }
@@ -509,7 +552,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 6. CONTROL DEL MODAL DINÁMICO (BLINDADO Y SIN ERRORES DE VARIABLE)
+  // 6. CONTROL DEL MODAL DINÁMICO (MES / SEMANA / DÍA)
   const modal = document.getElementById("productModal");
   const modalClose = document.getElementById("modalCloseBtn");
 
@@ -532,9 +575,31 @@ document.addEventListener("DOMContentLoaded", () => {
     const labelCjs = elCjs ? elCjs.closest('.spec-item').querySelector('.spec-label') : null;
     const labelPallets = elPallets ? elPallets.closest('.spec-item').querySelector('.spec-label') : null;
 
-    if (vista === "semana") {
+    if (vista === "dia") {
       // ==========================================
-      // A) VISTA SEMANAL (ROTACIÓN Y DESPACHO)
+      // A) VISTA DÍA HÁBIL (PICKING DIARIO URBANO)
+      // ==========================================
+      const cjsDia = Math.round(prod.cjs / 22);
+      const fracPalletDia = (cjsDia / prod.factor).toFixed(2);
+      const pctPallet = Math.round((cjsDia / prod.factor) * 100);
+
+      if (labelCjs) labelCjs.textContent = "PICKING DIARIO PROMEDIO";
+      if (elCjs) elCjs.textContent = `${cjsDia.toLocaleString("es-CL")} Cajas / día hábil`;
+
+      if (labelPallets) labelPallets.textContent = "EQUIVALENCIA EN ESTIBA DIARIA";
+      if (elPallets) elPallets.textContent = `${fracPalletDia} Pallet (${pctPallet}% de un pallet)`;
+
+      if (elNote) {
+        if (prod.factor <= 140) {
+          elNote.innerHTML = `⚡ <strong>Operación Diaria en Almacén:</strong> En 1 jornada se preparan <strong>${cjsDia} cajas</strong>. Al tener estiba baja (${prod.factor} cjs/pal), este producto consume casi <strong>medio pallet físico por día</strong>, justificando armado de pallets mixtos para furgones urbanos.`;
+        } else {
+          elNote.innerHTML = `⚡ <strong>Operación Diaria en Almacén:</strong> Se pican <strong>${cjsDia} cajas por día hábil</strong>. Al apilarse a alta densidad (${prod.factor} cjs/pal), representa solo el <strong>${pctPallet}% de un pallet</strong>, facilitando su consolidación en rutas locales.`;
+        }
+      }
+
+    } else if (vista === "semana") {
+      // ==========================================
+      // B) VISTA SEMANAL (RAMPLA Y REPOSICIÓN)
       // ==========================================
       const palSemExacto = prod.pallets / 4.43;
       const cjsSem = Math.round(prod.cjs / 4.43);
@@ -555,7 +620,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } else {
       // ==========================================
-      // B) VISTA MENSUAL (CONSOLIDADO EN BODEGA)
+      // C) VISTA MENSUAL (CONSOLIDADO EN BODEGA)
       // ==========================================
       if (labelCjs) labelCjs.textContent = "VENTA TOTAL DEL MES";
       if (elCjs) elCjs.textContent = `${prod.cjs.toLocaleString("es-CL")} Cajas en el mes`;
