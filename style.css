@@ -26,7 +26,7 @@ body {
   padding: 32px 24px;
 }
 
-/* Orbes de fondo animados */
+/* Orbes ambientales */
 .glow-orb {
   position: fixed;
   border-radius: 50%;
@@ -415,11 +415,11 @@ body {
   border-radius: 10px;
 }
 
-/* VISTA COMPARATIVA CIRCULAR (DONUT MIX) */
+/* VISTA COMPARATIVA TRIPLE (MES / SEMANA / DÍA) */
 .circular-compare-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
   margin-top: 10px;
 }
 
@@ -427,7 +427,7 @@ body {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--panel-border);
   border-radius: 16px;
-  padding: 20px;
+  padding: 20px 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -435,20 +435,20 @@ body {
 }
 
 .circle-card h4 {
-  font-size: 0.98rem;
+  font-size: 0.95rem;
   color: #FFFFFF;
   margin-bottom: 4px;
 }
 
 .circle-card p {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .chart-box-circle {
   width: 100%;
-  height: 290px;
+  height: 280px;
   position: relative;
 }
 
