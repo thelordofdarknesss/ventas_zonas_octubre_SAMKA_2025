@@ -1,300 +1,654 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SAMKA Logistics & Demand Intelligence</title>
-  
-  <!-- Tipografía Corporativa -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  
-  <link rel="stylesheet" href="style.css">
-  <!-- Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-  <!-- Fondos ambientales dinámicos -->
-  <div class="glow-orb orb-1"></div>
-  <div class="glow-orb orb-2"></div>
-  <div class="glow-orb orb-3"></div>
+document.addEventListener("DOMContentLoaded", () => {
+  // 1. DATA OFICIAL CON ESTIBA EXACTA (RESPALDO PREVENTIVO)
+  let dataStore = {
+    kpis: {
+      cajas_totales: 25597,
+      proyeccion_10: 28157,
+      pallets_mes: 102,
+      camiones_mes: 4
+    },
+    semanal: {
+      labels: ['Sem 1 (1-7)', 'Sem 2 (8-14)', 'Sem 3 (15-21)', 'Sem 4 (22-28)', 'Sem 5 (29-31)*'],
+      impulsivo: [3775, 4021, 4152, 4297, 2373],
+      familiar: [1184, 1150, 1227, 1392, 797],
+      granel: [241, 344, 260, 212, 172]
+    },
+    escenarios: {
+      labels: ['Impulsivos', 'Familiares', 'Granel'],
+      real: [18618, 5750, 1229],
+      p5: [19549, 6038, 1290],
+      p10: [20480, 6325, 1352],
+      p20: [22342, 6900, 1475]
+    },
+    topPallets: [
+      { sku: "12018554", name: "SAVORY Helado Cassata Brick 6x1L N1 CL", cat: "Familiar", code: "fam", cjs: 1381, factor: 135, pallets: 11 },
+      { sku: "12345001", name: "KRIKO FRUTILLA 20X60 ML C", cat: "Impulsivo", code: "imp", cjs: 1147, factor: 325, pallets: 4 },
+      { sku: "12345002", name: "SAVORY CENTELLA GALACTEA HEL 26X37,6G CL", cat: "Impulsivo", code: "imp", cjs: 1116, factor: 325, pallets: 4 },
+      { sku: "12345003", name: "MEGA Helado Frambuesa 16x90ml", cat: "Impulsivo", code: "imp", cjs: 1060, factor: 325, pallets: 4 },
+      { sku: "12345004", name: "SAVORY CENTELLA Hel Mz Lm 26x52g CL", cat: "Impulsivo", code: "imp", cjs: 1037, factor: 325, pallets: 4 },
+      { sku: "12345005", name: "CHOCOLITO Helado 20x85ml N1 CL", cat: "Impulsivo", code: "imp", cjs: 910, factor: 325, pallets: 3 },
+      { sku: "12345006", name: "CRAZY Helado Frambuesa 12x170 ml CL", cat: "Impulsivo", code: "imp", cjs: 894, factor: 198, pallets: 5 },
+      { sku: "12345007", name: "COLA DE TIGRE LECHE 26 X 70 ML", cat: "Impulsivo", code: "imp", cjs: 848, factor: 325, pallets: 3 },
+      { sku: "12345008", name: "CRAZY Helado Flocos 12x170ml CL", cat: "Impulsivo", code: "imp", cjs: 787, factor: 198, pallets: 4 },
+      { sku: "12345009", name: "CROCANTY Helado 20x90ml CL", cat: "Impulsivo", code: "imp", cjs: 744, factor: 325, pallets: 3 }
+    ]
+  };
 
-  <main class="dashboard-wrapper">
-    <!-- 1. HEADER CORPORATIVO -->
-    <header class="top-header">
-      <div class="header-titles">
-        <div class="tag-pill">
-          <span class="pulse-dot"></span>
-          CENTRO LOGÍSTICO SAMKA • ZONA NORTE (TARAPACÁ)
-        </div>
-        <h1>Planificación de Demanda, Despacho & Ruteo 2026</h1>
-        <p class="subtitle">Análisis histórico real Octubre 2025, proyecciones multi-escenario y simulación de carga para camiones rampla de 28 pallets.</p>
-      </div>
-      <div class="header-meta">
-        <div class="meta-box">
-          <span class="meta-label">Operador Distribución</span>
-          <span class="meta-val">Savory Ice Cream Co.</span>
-        </div>
-        <div class="meta-box">
-          <span class="meta-label">Factor de Cubicaje</span>
-          <span class="meta-val">Maestro Oficial x SKU</span>
-        </div>
-      </div>
-    </header>
+  // Cargar datos.json generado por datos.py si está disponible
+  fetch("datos.json")
+    .then(res => res.json())
+    .then(remoteData => {
+      if (remoteData.kpis) dataStore.kpis = remoteData.kpis;
+      if (remoteData.semanal) dataStore.semanal = remoteData.semanal;
+      if (remoteData.escenarios) dataStore.escenarios = remoteData.escenarios;
+      if (remoteData.top_pallets && remoteData.top_pallets.length > 0) {
+        dataStore.topPallets = remoteData.top_pallets.map(p => ({
+          sku: p.sku || "N/A",
+          name: p.name,
+          cat: p.familia_label || (p.cat === "fam" ? "Familiar" : (p.cat === "granel" ? "Granel" : "Impulsivo")),
+          code: p.cat,
+          cjs: p.cjs,
+          factor: p.factor_pallet || (p.cat === "fam" ? 135 : (p.cat === "granel" ? 96 : 325)),
+          pallets: Math.ceil(p.pallets || (p.cjs / (p.factor_pallet || 325)))
+        }));
+      }
+      actualizarDashboard();
+    })
+    .catch(() => {
+      actualizarDashboard();
+    });
 
-    <!-- 2. KPIS INTERACTIVOS -->
-    <section class="kpi-container">
-      <div class="kpi-card" data-tilt>
-        <div class="kpi-icon icon-blue">📦</div>
-        <div class="kpi-content">
-          <span class="kpi-title">Volumen Real Oct 2025</span>
-          <div class="kpi-number-wrap">
-            <span class="counter" id="kpi-cajas" data-target="25597">0</span>
-            <span class="kpi-unit">CJS</span>
-          </div>
-          <span class="kpi-foot">24.225 transacciones limpias</span>
-        </div>
-      </div>
+  // 2. ANIMACIÓN DE NÚMEROS EN LOS KPIS
+  const animateValue = (element, target, duration = 1400) => {
+    let start = 0;
+    const startTime = performance.now();
 
-      <div class="kpi-card target-card" data-tilt>
-        <div class="kpi-icon icon-green">📈</div>
-        <div class="kpi-content">
-          <span class="kpi-title">Proyección 2026 (+10%)</span>
-          <div class="kpi-number-wrap">
-            <span class="counter" id="kpi-proy" data-target="28157">0</span>
-            <span class="kpi-unit">CJS</span>
-          </div>
-          <span class="kpi-foot positive-badge">+2.560 cajas netas de meta</span>
-        </div>
-      </div>
+    const update = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easeOutQuad = 1 - (1 - progress) * (1 - progress);
+      const current = Math.floor(easeOutQuad * target);
 
-      <div class="kpi-card" data-tilt>
-        <div class="kpi-icon icon-orange">🏗️</div>
-        <div class="kpi-content">
-          <span class="kpi-title">Demanda en Pallets</span>
-          <div class="kpi-number-wrap">
-            <span class="counter" id="kpi-pallets" data-target="102">0</span>
-            <span class="kpi-unit">PLTS</span>
-          </div>
-          <span class="kpi-foot">Cálculo exacto por material</span>
-        </div>
-      </div>
+      element.textContent = current.toLocaleString("es-CL");
 
-      <div class="kpi-card" data-tilt>
-        <div class="kpi-icon icon-purple">🚛</div>
-        <div class="kpi-content">
-          <span class="kpi-title">Flota Ramplas Estimada</span>
-          <div class="kpi-number-wrap">
-            <span class="counter" id="kpi-camiones" data-target="4">0</span>
-            <span class="kpi-unit">CAMIONES</span>
-          </div>
-          <span class="kpi-foot">Capacidad 28 pallets cerrados</span>
-        </div>
-      </div>
-    </section>
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      } else {
+        element.textContent = target.toLocaleString("es-CL");
+      }
+    };
+    requestAnimationFrame(update);
+  };
 
-    <!-- 3. SECCIÓN BAHÍA DE CARGA FÍSICA (CAMIÓN RAMPLA 28 PALLETS) -->
-    <section class="panel-section truck-panel">
-      <div class="panel-head">
-        <div>
-          <h2>Simulador de Despacho: Rampla Frigorífica (28 Pallets Enteros)</h2>
-          <p class="panel-sub">Pasa el cursor por cualquier pallet para inspeccionar el SKU asignado, estiba oficial y volumen.</p>
-        </div>
-        <div class="truck-capacity-badge">
-          <span class="dot-live"></span> Carga Optimizada por Cubicaje
-        </div>
-      </div>
+  // 3. REFERENCIAS DEL DOM (BAHÍA E INSPECTOR)
+  const truckGrid = document.getElementById("truckGrid");
+  const inspSlot = document.getElementById("inspSlot");
+  const inspName = document.getElementById("inspName");
+  const inspCat = document.getElementById("inspCat");
+  const inspFactor = document.getElementById("inspFactor");
+  const inspCjs = document.getElementById("inspCjs");
 
-      <!-- Esquema físico del camión -->
-      <div class="truck-assembly">
-        <div class="truck-cabin">
-          <span>CABINA</span>
-        </div>
-        <div class="truck-trailer">
-          <div class="trailer-grid" id="truckGrid"></div>
-        </div>
-      </div>
+  // Carga operativa considerando estiba oficial
+  const truckLoads = {
+    iquique: {
+      titulo: "Camión #1: Troncal Iquique Centro (Alta Densidad)",
+      pallets: [
+        { name: "Kriko Frutilla", cat: "Impulsivo", code: "imp", factor: 325, cjs: 1147, count: 8 },
+        { name: "Centella Galáctea", cat: "Impulsivo", code: "imp", factor: 325, cjs: 1116, count: 7 },
+        { name: "Mega Frambuesa", cat: "Impulsivo", code: "imp", factor: 325, cjs: 1060, count: 6 },
+        { name: "Chocolito", cat: "Impulsivo", code: "imp", factor: 325, cjs: 910, count: 4 },
+        { name: "Cassata Brick 1L", cat: "Familiar", code: "fam", factor: 135, cjs: 1381, count: 3 }
+      ]
+    },
+    hospicio: {
+      titulo: "Camión #2: Conurbación Hospicio + Iquique Sur",
+      pallets: [
+        { name: "Cassata Brick 1L", cat: "Familiar", code: "fam", factor: 135, cjs: 1381, count: 7 },
+        { name: "Crazy Frambuesa", cat: "Impulsivo", code: "imp", factor: 198, cjs: 894, count: 6 },
+        { name: "Centella Mz Limón", cat: "Impulsivo", code: "imp", factor: 325, cjs: 1037, count: 6 },
+        { name: "Cola de Tigre", cat: "Impulsivo", code: "imp", factor: 325, cjs: 848, count: 5 },
+        { name: "Chocolate Suizo 1L", cat: "Familiar", code: "fam", factor: 135, cjs: 700, count: 4 }
+      ]
+    },
+    interior: {
+      titulo: "Camión #3: Stock Iquique + Ruta Pampa Tamarugal",
+      pallets: [
+        { name: "Crazy Flocos", cat: "Impulsivo", code: "imp", factor: 198, cjs: 787, count: 6 },
+        { name: "Trululu Súper", cat: "Impulsivo", code: "imp", factor: 325, cjs: 644, count: 6 },
+        { name: "Crocanty", cat: "Impulsivo", code: "imp", factor: 325, cjs: 744, count: 5 },
+        { name: "Cassata Brick 1L", cat: "Familiar", code: "fam", factor: 135, cjs: 1381, count: 5 },
+        { name: "Crazy Sangurucho", cat: "Impulsivo", code: "imp", factor: 260, cjs: 723, count: 4 },
+        { name: "Baldes Granel 4.8L", cat: "Granel", code: "granel", factor: 96, cjs: 400, count: 2 }
+      ]
+    }
+  };
 
-      <!-- Barra de inspección activa -->
-      <div class="inspector-strip" id="inspectorBar">
-        <div class="insp-item"><span class="insp-lbl">Pallet Seleccionado:</span> <strong id="inspSlot">P-01</strong></div>
-        <div class="insp-item"><span class="insp-lbl">Producto:</span> <strong id="inspName">Cassata Brick 1L</strong></div>
-        <div class="insp-item"><span class="insp-lbl">Familia:</span> <span class="insp-pill" id="inspCat">Familiar</span></div>
-        <div class="insp-item"><span class="insp-lbl">Estiba Oficial:</span> <strong id="inspFactor" class="factor-val">135 CJS/Pallet</strong></div>
-        <div class="insp-item"><span class="insp-lbl">Venta Real Mes:</span> <strong id="inspCjs">1.381 CJS</strong></div>
-      </div>
+  function recargarBahiaCamion(tipoRuta) {
+    const dataRuta = truckLoads[tipoRuta];
+    if (!dataRuta || !truckGrid) return;
 
-      <div class="truck-legend">
-        <div class="legend-item"><span class="color-chip chip-imp"></span> Helados Impulsivos (325 CJS/Pallet)</div>
-        <div class="legend-item"><span class="color-chip chip-fam"></span> Helados Familiares (135 CJS/Pallet)</div>
-        <div class="legend-item"><span class="color-chip chip-granel"></span> Baldes Granel (96 CJS/Pallet)</div>
-      </div>
-    </section>
+    truckGrid.innerHTML = "";
+    let slotCount = 1;
 
-    <!-- 4. SECCIÓN DISTRIBUCIÓN TERRITORIAL & RUTEO DE FLOTA -->
-    <section class="panel-section">
-      <div class="panel-head">
-        <div>
-          <h2>Distribución Territorial & Plan de Ruteo (Región de Tarapacá)</h2>
-          <p class="panel-sub">Justificación de despacho: hacia dónde se mueven los pallets y asignación operativa de camiones.</p>
-        </div>
-        <div class="tag-pill">Eje Iquique - Hospicio (95,9% Demanda)</div>
-      </div>
+    dataRuta.pallets.forEach(prod => {
+      for (let i = 0; i < prod.count; i++) {
+        if (slotCount <= 28) {
+          const slotNumber = `P-${String(slotCount).padStart(2, '0')}`;
+          const block = document.createElement("div");
+          block.className = `pallet-block ${prod.code}`;
+          block.innerHTML = `
+            <span class="p-id">${slotNumber}</span>
+            <span class="p-name">${prod.name.split(" ")[0]}</span>
+          `;
 
-      <div class="geo-routing-grid">
-        <!-- Tarjetas interactivas de Flota y Rutas -->
-        <div class="fleet-cards">
-          <div class="fleet-card active-route" data-dest="iquique">
-            <div class="fleet-header">
-              <span class="truck-icon-anim">🚛💨</span>
-              <div>
-                <h4>Camión #1: Troncal Iquique Centro & Costanera</h4>
-                <span class="route-tag">28 Pallets (Mix Alta Densidad)</span>
-              </div>
-            </div>
-            <p class="fleet-desc">Abastece el núcleo de alta rotación costera y almacenes principales (Kriko, Centella, Mega).</p>
-            <div class="fleet-progress"><div class="progress-bar" style="width: 100%;"></div></div>
-          </div>
+          block.addEventListener("mouseenter", () => {
+            if (inspSlot) inspSlot.textContent = slotNumber;
+            if (inspName) inspName.textContent = prod.name;
+            if (inspCat) {
+              inspCat.textContent = prod.cat;
+              inspCat.className = `insp-pill ${prod.code}`;
+            }
+            if (inspFactor) inspFactor.textContent = `${prod.factor} CJS/Pallet`;
+            if (inspCjs) inspCjs.textContent = `${prod.cjs.toLocaleString("es-CL")} CJS`;
+          });
 
-          <div class="fleet-card" data-dest="hospicio">
-            <div class="fleet-header">
-              <span class="truck-icon-anim">🚛💨</span>
-              <div>
-                <h4>Camión #2: Conurbación Hospicio + Iquique Sur</h4>
-                <span class="route-tag">28 Pallets (Mix Cassatas y Vasos)</span>
-              </div>
-            </div>
-            <p class="fleet-desc">20 Pallets directos para Alto Hospicio + 8 Pallets de soporte para el sector sur de Iquique.</p>
-            <div class="fleet-progress"><div class="progress-bar" style="width: 100%;"></div></div>
-          </div>
+          truckGrid.appendChild(block);
+          slotCount++;
+        }
+      }
+    });
 
-          <div class="fleet-card" data-dest="interior">
-            <div class="fleet-header">
-              <span class="truck-icon-anim">🚛💨</span>
-              <div>
-                <h4>Camión #3: Stock Iquique + Ruta Tamarugal</h4>
-                <span class="route-tag">28 Pallets (Carga Mixta + Baldes)</span>
-              </div>
-            </div>
-            <p class="fleet-desc">Consolidación bodega Iquique + pallets mixtos hacia Pozo Almonte, Pica y Huara.</p>
-            <div class="fleet-progress"><div class="progress-bar" style="width: 100%;"></div></div>
-          </div>
-        </div>
+    const p1 = dataRuta.pallets[0];
+    if (inspSlot) inspSlot.textContent = "P-01";
+    if (inspName) inspName.textContent = p1.name;
+    if (inspCat) {
+      inspCat.textContent = p1.cat;
+      inspCat.className = `insp-pill ${p1.code}`;
+    }
+    if (inspFactor) inspFactor.textContent = `${p1.factor} CJS/Pallet`;
+    if (inspCjs) inspCjs.textContent = `${p1.cjs.toLocaleString("es-CL")} CJS`;
+  }
 
-        <!-- Gráfico de Donut: Participación por Comuna -->
-        <div class="chart-box">
-          <canvas id="chartZonas"></canvas>
-        </div>
-      </div>
-    </section>
+  const fleetCards = document.querySelectorAll(".fleet-card");
+  fleetCards.forEach(card => {
+    card.addEventListener("click", () => {
+      fleetCards.forEach(c => c.classList.remove("active-route"));
+      card.classList.add("active-route");
+      const ruta = card.getAttribute("data-dest");
+      recargarBahiaCamion(ruta);
+    });
+  });
 
-    <!-- 5. ANÁLISIS TEMPORAL & COMPARATIVO (GRÁFICOS DUALES) -->
-    <section class="charts-row">
-      <div class="panel-section chart-card">
-        <div class="panel-head">
-          <h3>Evolución Semanal de Demanda (Octubre 2025)</h3>
-        </div>
-        <div class="chart-box">
-          <canvas id="chartSemanas"></canvas>
-        </div>
-      </div>
+  // 4. FUNCIÓN PARA LIMPIAR NOMBRES EN EL EJE Y
+  const formatearNombreComercial = (nombreCompleto) => {
+    const u = nombreCompleto.toUpperCase();
+    if (u.includes("CASSATA BRICK")) return "Cassata Brick 1L";
+    if (u.includes("KRIKO")) return "Kriko Frutilla";
+    if (u.includes("CENTELLA GALACTEA")) return "Centella Galáctea";
+    if (u.includes("MEGA FRAMBUESA")) return "Mega Frambuesa";
+    if (u.includes("CENTELLA") && u.includes("MZ")) return "Centella Mz Limón";
+    if (u.includes("CHOCOLITO")) return "Chocolito";
+    if (u.includes("CRAZY") && u.includes("FRAMBUESA")) return "Crazy Frambuesa";
+    if (u.includes("COLA DE TIGRE") || u.includes("TIGRE")) return "Cola de Tigre";
+    if (u.includes("CRAZY") && u.includes("FLOCOS")) return "Crazy Flocos";
+    if (u.includes("CROCANTY")) return "Crocanty";
+    if (u.includes("SUIZO")) return "Chocolate Suizo 1L";
+    if (u.includes("TRES LECHES")) return "Tres Leches 1L";
+    return nombreCompleto.length > 20 ? nombreCompleto.substring(0, 20) + "..." : nombreCompleto;
+  };
 
-      <div class="panel-section chart-card">
-        <div class="panel-head">
-          <h3>Comparativa de Escenarios 2026</h3>
-          <div class="switch-group">
-            <button class="btn-toggle active" id="btnAllEscenarios">Todos</button>
-            <button class="btn-toggle" id="btnFocus10">+10% Target</button>
-          </div>
-        </div>
-        <div class="chart-box">
-          <canvas id="chartEscenarios"></canvas>
-        </div>
-      </div>
-    </section>
+  // 5. INICIALIZADOR GLOBAL DEL DASHBOARD
+  function actualizarDashboard() {
+    document.querySelectorAll(".counter").forEach(counter => {
+      const id = counter.id;
+      let target = parseInt(counter.getAttribute("data-target"), 10);
+      if (id === "kpi-cajas" && dataStore.kpis.cajas_totales) target = dataStore.kpis.cajas_totales;
+      if (id === "kpi-proy" && dataStore.kpis.proyeccion_10) target = dataStore.kpis.proyeccion_10;
+      if (id === "kpi-pallets" && dataStore.kpis.pallets_mes) target = dataStore.kpis.pallets_mes;
+      if (id === "kpi-camiones" && dataStore.kpis.camiones_mes) target = dataStore.kpis.camiones_mes;
+      animateValue(counter, target);
+    });
 
-  <!-- 6. MIX TOP 10 PALLETS & COMPARATIVA OPERATIVA -->
-    <section class="panel-section full-chart">
-      <div class="panel-head">
-        <div>
-          <h3>Top 10 Productos: Mix de Pallets Reales & Análisis Comparativo</h3>
-          <p class="panel-sub" id="subtituloPallets">Visualiza el ranking de pallets o compara la participación mensual vs. el ritmo semanal.</p>
-        </div>
-        <div class="switch-group">
-          <button class="btn-toggle active" id="btnVistaBarras">📊 Ranking Pallets</button>
-          <button class="btn-toggle" id="btnVistaCircular">🍩 Comparar Mix (Mes vs Sem)</button>
-        </div>
-      </div>
+    recargarBahiaCamion("iquique");
 
-      <!-- Contenedor 1: Barras estándar -->
-      <div class="chart-box tall-box" id="boxBarras">
-        <canvas id="chartPalletsTop"></canvas>
-      </div>
+    // Gráfico 1: Ventas Semanales Apiladas
+    const ctxSem = document.getElementById("chartSemanas");
+    if (ctxSem) {
+      new Chart(ctxSem, {
+        type: "bar",
+        data: {
+          labels: dataStore.semanal.labels,
+          datasets: [
+            { label: "Impulsivos", data: dataStore.semanal.impulsivo, backgroundColor: "#2563EB", borderRadius: 4 },
+            { label: "Familiares", data: dataStore.semanal.familiar, backgroundColor: "#059669", borderRadius: 4 },
+            { label: "Granel", data: dataStore.semanal.granel, backgroundColor: "#D97706", borderRadius: 4 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: { stacked: true, grid: { color: "rgba(255,255,255,0.05)" } }
+          }
+        }
+      });
+    }
 
-      <!-- Contenedor 2: Vista Circular Comparativa Doble (Mes vs Semana) -->
-      <div class="circular-compare-grid" id="boxCirculares" style="display: none;">
-        <div class="circle-card">
-          <h4>📦 Mix Mensual Consolidado (102 Pallets Totales)</h4>
-          <p>Ocupación acumulada en bodega central durante octubre</p>
-          <div class="chart-box-circle">
-            <canvas id="chartPieMes"></canvas>
-          </div>
-        </div>
-        <div class="circle-card">
-          <h4>🚚 Despacho Semanal Promedio (~23 Pallets / Viaje)</h4>
-          <p>Carga requerida por cada rampla semanal de 28 slots</p>
-          <div class="chart-box-circle">
-            <canvas id="chartPieSemana"></canvas>
-          </div>
-        </div>
-      </div>
-    </section>
-    <!-- 7. MODAL FICHA TÉCNICA DE PRODUCTO -->
-    <div id="productModal" class="modal-backdrop">
-      <div class="modal-card">
-        <div class="modal-header">
-          <div>
-            <span class="tag-pill" id="modalSkuPill">SKU: 12018322</span>
-            <h3 id="modalProdTitle">SAVORY Helado Cassata Brick 6x1L</h3>
-          </div>
-          <button class="modal-close" id="modalCloseBtn">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="spec-grid">
-            <div class="spec-item">
-              <span class="spec-label">Categoría Logística</span>
-              <strong id="modalCat">Familiar</strong>
-            </div>
-            <div class="spec-item">
-              <span class="spec-label">Factor de Pallet</span>
-              <strong id="modalFactor" class="factor-val">135 Cajas/Pallet</strong>
-            </div>
-            <div class="spec-item">
-              <span class="spec-label">Demanda Octubre</span>
-              <strong id="modalCjs">1.381 CJS</strong>
-            </div>
-            <div class="spec-item highlight">
-              <span class="spec-label">Pallets Reales de Carga</span>
-              <strong id="modalPallets">11 Pallets</strong>
-            </div>
-          </div>
-          <div class="modal-note" id="modalImpactNote">
-            Este producto requiere <strong>11 pallets de rampla</strong> debido a su formato de 135 cajas por pallet.
-          </div>
-        </div>
-      </div>
-    </div>
+    // Gráfico 2: Escenarios 2026
+    const ctxEsc = document.getElementById("chartEscenarios");
+    let chartEsc = null;
+    if (ctxEsc) {
+      chartEsc = new Chart(ctxEsc, {
+        type: "bar",
+        data: {
+          labels: dataStore.escenarios.labels,
+          datasets: [
+            { label: "Real 2025", data: dataStore.escenarios.real, backgroundColor: "#64748B", borderRadius: 4 },
+            { label: "+5%", data: dataStore.escenarios.p5, backgroundColor: "#38BDF8", borderRadius: 4 },
+            { label: "+10% (Target)", data: dataStore.escenarios.p10, backgroundColor: "#2563EB", borderRadius: 4 },
+            { label: "+20%", data: dataStore.escenarios.p20, backgroundColor: "#1E1B4B", borderRadius: 4 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { grid: { display: false } },
+            y: { grid: { color: "rgba(255,255,255,0.05)" } }
+          }
+        }
+      });
+    }
 
-    <!-- 8. FOOTER CORPORATIVO -->
-    <footer class="top-header" style="padding: 18px 30px; font-size: 0.84rem; color: var(--text-muted);">
-      <div>© 2026 Distribuidora Samka - División Logística y Cadena de Suministro Savory.</div>
-      <div style="display: flex; align-items: center; gap: 8px; color: #10B981; font-weight: 700;">
-        <span class="pulse-dot"></span> Motor de Planificación Operativo
-      </div>
-    </footer>
-  </main>
+    const btnAll = document.getElementById("btnAllEscenarios");
+    const btnF10 = document.getElementById("btnFocus10");
 
-  <script src="script.js"></script>
-</body>
-</html>
+    if (btnAll && btnF10 && chartEsc) {
+      btnAll.addEventListener("click", function() {
+        this.classList.add("active");
+        btnF10.classList.remove("active");
+        chartEsc.data.datasets.forEach(ds => ds.hidden = false);
+        chartEsc.update();
+      });
+
+      btnF10.addEventListener("click", function() {
+        this.classList.add("active");
+        btnAll.classList.remove("active");
+        chartEsc.data.datasets.forEach(ds => {
+          ds.hidden = (ds.label !== "Real 2025" && ds.label !== "+10% (Target)");
+        });
+        chartEsc.update();
+      });
+    }
+
+    // Gráfico 3 & 4 (Top 10): Barras Horizontales
+    const ctxTop = document.getElementById("chartPalletsTop");
+    const ctxPieMes = document.getElementById("chartPieMes");
+    const ctxPieSem = document.getElementById("chartPieSemana");
+    const ctxPieDia = document.getElementById("chartPieDia");
+
+    const boxBarras = document.getElementById("boxBarras");
+    const boxCirculares = document.getElementById("boxCirculares");
+    const btnBarras = document.getElementById("btnVistaBarras");
+    const btnCircular = document.getElementById("btnVistaCircular");
+    const subPallets = document.getElementById("subtituloPallets");
+
+    const coloresTop10 = [
+      "#10B981", "#2563EB", "#3B82F6", "#06B6D4", "#6366F1",
+      "#8B5CF6", "#EC4899", "#F59E0B", "#F97316", "#64748B"
+    ];
+
+    let chartTopInstance = null;
+    let chartPieMesInstance = null;
+    let chartPieSemInstance = null;
+    let chartPieDiaInstance = null;
+
+    if (ctxTop) {
+      chartTopInstance = new Chart(ctxTop, {
+        type: "bar",
+        data: {
+          labels: dataStore.topPallets.map(p => `${formatearNombreComercial(p.name)} (${p.factor} c/p)`),
+          datasets: [{
+            label: "Pallets Reales Calculados",
+            data: dataStore.topPallets.map(p => p.pallets),
+            backgroundColor: dataStore.topPallets.map(p => p.code === "imp" ? "#2563EB" : (p.code === "fam" ? "#059669" : "#D97706")),
+            borderRadius: 6
+          }]
+        },
+        options: {
+          indexAxis: "y",
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: (items) => dataStore.topPallets[items[0].dataIndex].name,
+                label: (ctx) => ` Demanda Mes: ${ctx.parsed.x} Pallets Reales (Clic para ver ficha)`
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { stepSize: 1 }, grid: { color: "rgba(255,255,255,0.05)" } },
+            y: { grid: { display: false } }
+          },
+          onClick: (evt, elements) => {
+            if (elements && elements.length > 0) {
+              const idx = elements[0].index;
+              abrirModalProducto(dataStore.topPallets[idx], "mes");
+            }
+          }
+        }
+      });
+    }
+
+    // Inicialización de Gráficos Circulares Triples (Mes, Semana y Día de Picking)
+    function inicializarGraficosCirculares() {
+      if (chartPieMesInstance && chartPieSemInstance && chartPieDiaInstance) return;
+
+      // 1. DATA MES: Ordenada de mayor a menor por pallets totales
+      const itemsMesOrdenados = [...dataStore.topPallets].sort((a, b) => b.pallets - a.pallets);
+
+      // 2. DATA SEMANA: Ordenada por volumen semanal
+      const itemsSemOrdenados = [...dataStore.topPallets].sort((a, b) => (b.pallets / 4.43) - (a.pallets / 4.43));
+
+      // 3. DATA DÍA: Base 22 días hábiles (ordenada por cajas diarias a preparar)
+      const itemsDiaOrdenados = [...dataStore.topPallets].sort((a, b) => (b.cjs / 22) - (a.cjs / 22));
+
+      // DONUT 1: MES
+      if (ctxPieMes && !chartPieMesInstance) {
+        chartPieMesInstance = new Chart(ctxPieMes, {
+          type: "doughnut",
+          data: {
+            labels: itemsMesOrdenados.map(p => `${formatearNombreComercial(p.name)}: ${p.pallets} plts`),
+            datasets: [{
+              data: itemsMesOrdenados.map(p => p.pallets),
+              backgroundColor: coloresTop10,
+              borderWidth: 2,
+              borderColor: "#0A0F1D",
+              hoverOffset: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "right",
+                labels: {
+                  color: "#F8FAFC",
+                  boxWidth: 10,
+                  boxHeight: 10,
+                  usePointStyle: true,
+                  padding: 10,
+                  font: { size: 10.5, weight: "600" }
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  title: (items) => itemsMesOrdenados[items[0].dataIndex].name,
+                  label: (ctx) => ` Demanda Mes: ${ctx.raw} Pallets (Clic para ver ficha)`
+                }
+              }
+            },
+            cutout: "60%",
+            onClick: (evt, elements) => {
+              if (elements && elements.length > 0) {
+                const idx = elements[0].index;
+                abrirModalProducto(itemsMesOrdenados[idx], "mes");
+              }
+            }
+          }
+        });
+      }
+
+      // DONUT 2: SEMANA
+      if (ctxPieSem && !chartPieSemInstance) {
+        chartPieSemInstance = new Chart(ctxPieSem, {
+          type: "doughnut",
+          data: {
+            labels: itemsSemOrdenados.map(p => {
+              const palExacto = (p.pallets / 4.43).toFixed(1);
+              return `${formatearNombreComercial(p.name)}: ~${Math.max(1, Math.round(p.pallets / 4.43))} plts (${palExacto})`;
+            }),
+            datasets: [{
+              data: itemsSemOrdenados.map(p => Math.max(1, Math.round(p.pallets / 4.43))),
+              backgroundColor: coloresTop10,
+              borderWidth: 2,
+              borderColor: "#0A0F1D",
+              hoverOffset: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "right",
+                labels: {
+                  color: "#F8FAFC",
+                  boxWidth: 10,
+                  boxHeight: 10,
+                  usePointStyle: true,
+                  padding: 10,
+                  font: { size: 10.5, weight: "600" }
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  title: (items) => itemsSemOrdenados[items[0].dataIndex].name,
+                  label: (ctx) => ` Despacho Semanal: ${ctx.raw} Pallets (Clic para ver ficha)`
+                }
+              }
+            },
+            cutout: "60%",
+            onClick: (evt, elements) => {
+              if (elements && elements.length > 0) {
+                const idx = elements[0].index;
+                abrirModalProducto(itemsSemOrdenados[idx], "semana");
+              }
+            }
+          }
+        });
+      }
+
+      // DONUT 3: DÍA HÁBIL (PICKING DIARIO URBANO)
+      if (ctxPieDia && !chartPieDiaInstance) {
+        chartPieDiaInstance = new Chart(ctxPieDia, {
+          type: "doughnut",
+          data: {
+            labels: itemsDiaOrdenados.map(p => {
+              const cjsDia = Math.round(p.cjs / 22);
+              return `${formatearNombreComercial(p.name)}: ${cjsDia} cjs/día`;
+            }),
+            datasets: [{
+              data: itemsDiaOrdenados.map(p => Math.round(p.cjs / 22)),
+              backgroundColor: coloresTop10,
+              borderWidth: 2,
+              borderColor: "#0A0F1D",
+              hoverOffset: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "right",
+                labels: {
+                  color: "#F8FAFC",
+                  boxWidth: 10,
+                  boxHeight: 10,
+                  usePointStyle: true,
+                  padding: 10,
+                  font: { size: 10.5, weight: "600" }
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  title: (items) => itemsDiaOrdenados[items[0].dataIndex].name,
+                  label: (ctx) => ` Picking Diario: ${ctx.raw} Cajas/Día (Clic para ver ficha)`
+                }
+              }
+            },
+            cutout: "60%",
+            onClick: (evt, elements) => {
+              if (elements && elements.length > 0) {
+                const idx = elements[0].index;
+                abrirModalProducto(itemsDiaOrdenados[idx], "dia");
+              }
+            }
+          }
+        });
+      }
+    }
+
+    if (btnBarras && btnCircular) {
+      btnBarras.addEventListener("click", () => {
+        btnBarras.classList.add("active");
+        btnCircular.classList.remove("active");
+        if (boxBarras) boxBarras.style.display = "block";
+        if (boxCirculares) boxCirculares.style.display = "none";
+        if (subPallets) subPallets.textContent = "Visualiza el ranking de pallets según el cubicaje oficial de cada helado.";
+      });
+
+      btnCircular.addEventListener("click", () => {
+        btnCircular.classList.add("active");
+        btnBarras.classList.remove("active");
+        if (boxBarras) boxBarras.style.display = "none";
+        if (boxCirculares) boxCirculares.style.display = "grid";
+        if (subPallets) subPallets.textContent = "Ciclo logístico: Ocupación acumulada en bodega (Mes), Rampla (Semana) y Picking urbano (Día).";
+        inicializarGraficosCirculares();
+      });
+    }
+
+    // Gráfico Donut de Comunas
+    const ctxZonas = document.getElementById("chartZonas");
+    if (ctxZonas) {
+      new Chart(ctxZonas, {
+        type: "doughnut",
+        data: {
+          labels: ["Iquique (69.9%)", "Alto Hospicio (26.0%)", "Pozo Almonte (2.4%)", "Pica (1.0%)", "Huara / Camiña (0.7%)"],
+          datasets: [{
+            data: [17890, 6650, 620, 260, 177],
+            backgroundColor: ["#2563EB", "#059669", "#D97706", "#7C3AED", "#64748B"],
+            borderWidth: 0,
+            hoverOffset: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "right",
+              labels: { boxWidth: 12, usePointStyle: true, color: "#94A3B8" }
+            }
+          },
+          cutout: "68%"
+        }
+      });
+    }
+  }
+
+  // 6. CONTROL DEL MODAL DINÁMICO (MES / SEMANA / DÍA)
+  const modal = document.getElementById("productModal");
+  const modalClose = document.getElementById("modalCloseBtn");
+
+  function abrirModalProducto(prod, vista = "mes") {
+    if (!modal || !prod) return;
+
+    const elSku = document.getElementById("modalSkuPill");
+    const elTitle = document.getElementById("modalProdTitle");
+    const elCat = document.getElementById("modalCat");
+    const elFactor = document.getElementById("modalFactor");
+    const elCjs = document.getElementById("modalCjs");
+    const elPallets = document.getElementById("modalPallets");
+    const elNote = document.getElementById("modalImpactNote");
+
+    if (elSku) elSku.textContent = prod.sku && prod.sku !== "N/A" ? `SKU: ${prod.sku}` : "SKU OFICIAL SAVORY";
+    if (elTitle) elTitle.textContent = prod.name;
+    if (elCat) elCat.textContent = prod.cat;
+    if (elFactor) elFactor.textContent = `${prod.factor} CJS/Pallet`;
+
+    const labelCjs = elCjs ? elCjs.closest('.spec-item').querySelector('.spec-label') : null;
+    const labelPallets = elPallets ? elPallets.closest('.spec-item').querySelector('.spec-label') : null;
+
+    if (vista === "dia") {
+      // ==========================================
+      // A) VISTA DÍA HÁBIL (PICKING DIARIO URBANO)
+      // ==========================================
+      const cjsDia = Math.round(prod.cjs / 22);
+      const fracPalletDia = (cjsDia / prod.factor).toFixed(2);
+      const pctPallet = Math.round((cjsDia / prod.factor) * 100);
+
+      if (labelCjs) labelCjs.textContent = "PICKING DIARIO PROMEDIO";
+      if (elCjs) elCjs.textContent = `${cjsDia.toLocaleString("es-CL")} Cajas / día hábil`;
+
+      if (labelPallets) labelPallets.textContent = "EQUIVALENCIA EN ESTIBA DIARIA";
+      if (elPallets) elPallets.textContent = `${fracPalletDia} Pallet (${pctPallet}% de un pallet)`;
+
+      if (elNote) {
+        if (prod.factor <= 140) {
+          elNote.innerHTML = `⚡ <strong>Operación Diaria en Almacén:</strong> En 1 jornada se preparan <strong>${cjsDia} cajas</strong>. Al tener estiba baja (${prod.factor} cjs/pal), este producto consume casi <strong>medio pallet físico por día</strong>, justificando armado de pallets mixtos para furgones urbanos.`;
+        } else {
+          elNote.innerHTML = `⚡ <strong>Operación Diaria en Almacén:</strong> Se pican <strong>${cjsDia} cajas por día hábil</strong>. Al apilarse a alta densidad (${prod.factor} cjs/pal), representa solo el <strong>${pctPallet}% de un pallet</strong>, facilitando su consolidación en rutas locales.`;
+        }
+      }
+
+    } else if (vista === "semana") {
+      // ==========================================
+      // B) VISTA SEMANAL (RAMPLA Y REPOSICIÓN)
+      // ==========================================
+      const palSemExacto = prod.pallets / 4.43;
+      const cjsSem = Math.round(prod.cjs / 4.43);
+
+      const minPal = Math.floor(palSemExacto);
+      const maxPal = Math.ceil(palSemExacto);
+      const rangoPallets = minPal === maxPal ? `${maxPal} Pallets` : `${minPal} a ${maxPal} Pallets`;
+
+      if (labelCjs) labelCjs.textContent = "VENTA SEMANAL PROMEDIO";
+      if (elCjs) elCjs.textContent = `${cjsSem.toLocaleString("es-CL")} Cajas / 7 días`;
+
+      if (labelPallets) labelPallets.textContent = "ESPACIO EN RAMPLA (DE 28 SLOTS)";
+      if (elPallets) elPallets.textContent = `${rangoPallets} en el camión por semana`;
+
+      if (elNote) {
+        elNote.innerHTML = `🚚 <strong>Interpretación Operativa (Semanal):</strong> En 1 semana se consumen <strong>${cjsSem.toLocaleString("es-CL")} cajas</strong> de este helado. Para cubrir esa venta, cada despacho semanal debe llevar <strong>${rangoPallets} en el camión</strong> (${prod.factor} cajas por pallet).`;
+      }
+
+    } else {
+      // ==========================================
+      // C) VISTA MENSUAL (CONSOLIDADO EN BODEGA)
+      // ==========================================
+      if (labelCjs) labelCjs.textContent = "VENTA TOTAL DEL MES";
+      if (elCjs) elCjs.textContent = `${prod.cjs.toLocaleString("es-CL")} Cajas en el mes`;
+
+      if (labelPallets) labelPallets.textContent = "VOLUMEN MENSUAL EN BODEGA";
+      if (elPallets) elPallets.textContent = `${prod.pallets} Pallets en el mes (Acumulado)`;
+
+      if (elNote) {
+        if (prod.factor <= 140) {
+          elNote.innerHTML = `📦 <strong>Interpretación Operativa (Mensual):</strong> En todo el mes se despachan <strong>${prod.cjs.toLocaleString("es-CL")} cajas</strong>, ocupando <strong>${prod.pallets} pallets de piso</strong> en bodega. Por su formato voluminoso (${prod.factor} cjs/pal), este solo producto representa casi <strong>medio camión rampla completo</strong> del mes.`;
+        } else if (prod.factor === 198) {
+          elNote.innerHTML = `📦 <strong>Interpretación Operativa (Mensual):</strong> En todo el mes se comercializan <strong>${prod.cjs.toLocaleString("es-CL")} cajas</strong>, ocupando <strong>${prod.pallets} pallets</strong> acumulados en bodega con estiba intermedia (${prod.factor} cjs/pal).`;
+        } else {
+          elNote.innerHTML = `📦 <strong>Interpretación Operativa (Mensual):</strong> Con <strong>${prod.cjs.toLocaleString("es-CL")} cajas</strong> vendidas al mes, solo requiere <strong>${prod.pallets} pallets</strong> en bodega gracias a su alta densidad (${prod.factor} cajas por pallet).`;
+        }
+      }
+    }
+
+    modal.classList.add("active");
+  }
+
+  if (modalClose) {
+    modalClose.onclick = () => modal.classList.remove("active");
+  }
+  window.onclick = (e) => {
+    if (e.target === modal) modal.classList.remove("active");
+  };
+
+  Chart.defaults.color = "#94A3B8";
+  Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+});
